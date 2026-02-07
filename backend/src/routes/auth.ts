@@ -1,13 +1,13 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import passport from 'passport';
 import { config } from '../config';
 import { pgPool } from '../database/postgres';
 import { mysqlPool } from '../database/mysql';
 import { validate, authSchemas } from '../middleware/validation';
 import { authenticateJWT } from '../middleware/auth';
-import { AuthenticatedRequest, User, ApiResponse } from '../types';
+import { User, ApiResponse } from '../types';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ const router = Router();
 router.post(
   '/register',
   validate(authSchemas.register),
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password, name } = req.body;
       
@@ -47,7 +47,7 @@ router.post(
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         config.jwt.secret,
-        { expiresIn: config.jwt.expiresIn }
+        { expiresIn: config.jwt.expiresIn } as SignOptions
       );
       
       // Log analytics to MySQL
@@ -72,7 +72,7 @@ router.post(
 router.post(
   '/login',
   validate(authSchemas.login),
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
       
@@ -103,7 +103,7 @@ router.post(
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         config.jwt.secret,
-        { expiresIn: config.jwt.expiresIn }
+        { expiresIn: config.jwt.expiresIn } as SignOptions
       );
       
       // Log to MySQL
@@ -134,12 +134,12 @@ router.get(
 router.get(
   '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: '/login' }),
-  (req: AuthenticatedRequest, res: Response) => {
+  (req: Request, res: Response) => {
     const user = req.user as User;
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn } as SignOptions
     );
     
     res.redirect(`${config.frontendUrl}/auth/callback?token=${token}`);
@@ -150,10 +150,10 @@ router.get(
 router.get(
   '/me',
   authenticateJWT,
-  (req: AuthenticatedRequest, res: Response): void => {
+  (req: Request, res: Response): void => {
     const response: ApiResponse<User> = {
       success: true,
-      data: req.user,
+      data: req.user as User,
     };
     res.json(response);
   }
@@ -163,7 +163,7 @@ router.get(
 router.post(
   '/logout',
   authenticateJWT,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       await mysqlPool.query(
         'INSERT INTO analytics (event_type, user_id) VALUES (?, ?)',

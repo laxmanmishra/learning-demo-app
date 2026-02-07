@@ -1,9 +1,9 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { pgPool } from '../database/postgres';
 import { cacheGet, cacheSet, cacheDelete } from '../database/redis';
 import { authenticateJWT, optionalAuth } from '../middleware/auth';
 import { validate, postSchemas } from '../middleware/validation';
-import { AuthenticatedRequest, Post, PaginatedResponse } from '../types';
+import { Post, PaginatedResponse } from '../types';
 
 const router = Router();
 
@@ -11,7 +11,7 @@ const router = Router();
 router.get(
   '/',
   optionalAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -73,7 +73,7 @@ router.get(
 router.get(
   '/:id',
   validate(postSchemas.getById),
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       
@@ -113,7 +113,7 @@ router.post(
   '/',
   authenticateJWT,
   validate(postSchemas.create),
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { title, content } = req.body;
       const authorId = req.user?.id;
@@ -141,7 +141,7 @@ router.put(
   '/:id',
   authenticateJWT,
   validate(postSchemas.update),
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       const { title, content } = req.body;
@@ -189,7 +189,7 @@ router.put(
 router.delete(
   '/:id',
   authenticateJWT,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       const userId = req.user?.id;

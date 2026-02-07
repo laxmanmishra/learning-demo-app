@@ -11,6 +11,8 @@ interface Message {
     from?: string;
     content?: string;
     timestamp?: string;
+    userId?: string;
+    status?: string;
   };
   userId?: string;
   timestamp: string;
@@ -52,7 +54,7 @@ export default function ChatPage() {
     newSocket.on('presence', (msg: Message) => {
       if (msg.payload.userId) {
         if (msg.payload.status === 'online') {
-          setOnlineUsers((prev) => [...new Set([...prev, msg.payload.userId!])]);
+          setOnlineUsers((prev) => Array.from(new Set([...prev, msg.payload.userId!])));
         } else {
           setOnlineUsers((prev) => prev.filter((id) => id !== msg.payload.userId));
         }
